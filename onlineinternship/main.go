@@ -1,10 +1,15 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
+
+	"github.com/olivere/elastic"
+	//elastic "gopkg.in/olivere/elastic.v7"
 )
 
 type Page struct {
@@ -23,11 +28,11 @@ type News struct {
 }
 
 type Data struct {
-	Timestamp uint     `json:"timestamp"`
-	Source    string   `json:"source"`
-	Title     string   `json:"title"`
-	Body      string   `json:"body"`
-	Types     []string `json:"types"`
+	Timestamp string `json:"timestamp"`
+	Source    string `json:"source"`
+	Title     string `json:"title"`
+	Body      string `json:"body"`
+	//Types     []string `json:"types"`
 }
 
 func fetch(url string) Page {
@@ -60,13 +65,7 @@ func fetch(url string) Page {
 		return p
 	}
 
-	//error := json.NewDecoder(resp.Body).Decode(&p)
 	json.Unmarshal([]byte(body), &p)
-
-	// if error != nil {
-	// 	fmt.Println("json get error:", error)
-	// 	return p
-	// }
 	fmt.Println("Successful")
 
 	return p
@@ -76,40 +75,140 @@ func printPage(p Page) {
 	fmt.Println(fmt.Sprintf("%+v", p))
 }
 
-func fetchData(p Page) {
+func fetchData(p Page) []Data {
 	nl := p.Newslist
 	length := len(nl)
 	dataList := []Data{}
+	fmt.Println("The length is ", length)
 	for i := 0; i < length; i++ {
-		dataList[i].Body = p.Newslist[i].Description
-		dataList[i].Source = p.Newslist[i].Source
-		//dataList[i].Timestamp = uint(p.Newslist[i].Ctime)
-		dataList[i].Title = p.Newslist[i].Title
-		//dataList[i].Types = p.Newslist[i].
+		// reflect 要求 名字一样，所以用的append
+		temp := Data{p.Newslist[i].Ctime, p.Newslist[i].Source, p.Newslist[i].Title, p.Newslist[i].Description}
+		dataList = append(dataList, temp)
+	}
+
+	fmt.Println(fmt.Sprintf("%+v", dataList))
+	return dataList
+}
+
+/* task manager goroutine / select/ time after
+channel -> kafka
+producer consumer model
+DDIA
+golang trie
+1. md5 + redis (specific)
+2. same hash + redis (opaque)
+3. bloom filter + redis(low overhead)
+
+raw dataset backup: -> es
+*/
+func fetchDataFunc(ch chan string) {
+
+	p := fetch("http://api.tianapi.com/topnews/index?key=5b3105d3a9e6a64376361e84e0b6660d")
+	printPage(p)
+	dataList := fetchData(p)
+	dataInsersion(dataList)
+
+	time.Sleep(3600 * time.Second)
+	ch <- "Start fetch data complete next fetch will start after one hour"
+
+}
+
+func dataInsersion(dataList []Data) {
+	ctx := context.Background()
+	esclient, err := GetESClient()
+	if err != nil {
+		fmt.Println("Error initializing : ", err)
+		panic("Client fail ")
+	}
+	length := len(dataList)
+	for i := 0; i < length; i++ {
+		dataJSON, err := json.Marshal(dataList[i])
+		js := string(dataJSON)
+		ind, err := esclient.Index().
+			Index("News").
+			BodyJson(js).
+			Do(ctx)
+
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Printf("The news id is %s, the index is  %s\n", ind.Id, ind.Index)
+
 	}
 }
 
-// func printPage(p Page) {
-// 	fmt.Println(p.Timestamp)
-// 	fmt.Println(p.Source)
-// 	fmt.Println(p.Title)
-// 	fmt.Println(p.Body)
-// 	fmt.Println(p.Types)
-// }
+func dataQuerying(id string) {
+	ctx := context.Background()
+	esclient, err := GetESClient()
+	// 根据id查询文档
+	get1, err := esclient.Get().
+		Index("News").
+		Id(id).
+		Do(ctx)
+	if err != nil {
+		// Handle error
+		panic(err)
+	}
+	if get1.Found {
+		fmt.Printf("News id=%s Version =%d Index =%s\n", get1.Id, get1.Version, get1.Index)
+	}
 
+	news := Data{}
+	// 提取文档内容，原始类型是json数据
+	data, _ := get1.Source.MarshalJSON()
+	// 将json转成struct结果
+	json.Unmarshal(data, &news)
+	// 打印结果
+	fmt.Println(news.Body)
+}
+
+func dataDelete(id string) {
+	ctx := context.Background()
+	esclient, err := GetESClient()
+	// 根据id查询文档
+	_, err = esclient.Delete().
+		Index("News").
+		Id(id).
+		Do(ctx)
+	if err != nil {
+		// Handle error
+		panic(err)
+	}
+}
+
+func GetESClient() (*elastic.Client, error) {
+
+	client, err := elastic.NewClient(elastic.SetURL("http://localhost:9200"),
+		elastic.SetSniff(false),
+		elastic.SetHealthcheck(false))
+
+	fmt.Println("ES initialized...")
+
+	return client, err
+
+}
+
+// Api Key: 5b3105d3a9e6a64376361e84e0b6660d
+//url := "http://api.tianapi.com/generalnews/index?key=5b3105d3a9e6a64376361e84e0b6660d"
+// url := "http://api.tianapi.com/topnews/index?key=5b3105d3a9e6a64376361e84e0b6660d"
+
+//fmt.Println(fetch("http://api.tianapi.com/topnews/index?key=5b3105d3a9e6a64376361e84e0b6660d"))
 func main() {
-	// Api Key: 5b3105d3a9e6a64376361e84e0b6660d
-	//url := "http://api.tianapi.com/generalnews/index?key=5b3105d3a9e6a64376361e84e0b6660d"
-	// url := "http://api.tianapi.com/topnews/index?key=5b3105d3a9e6a64376361e84e0b6660d"
 
-	//fmt.Println(fetch("http://api.tianapi.com/topnews/index?key=5b3105d3a9e6a64376361e84e0b6660d"))
-	p := fetch("http://api.tianapi.com/topnews/index?key=5b3105d3a9e6a64376361e84e0b6660d")
-	printPage(p)
+	//p := fetch("http://api.tianapi.com/topnews/index?key=5b3105d3a9e6a64376361e84e0b6660d")
+	//printPage(p)
 	// url := "http://api.tianapi.com/topnews/index?key=5b3105d3a9e6a64376361e84e0b6660d"
 	// req, _ := http.NewRequest("GET", url, nil)
 	// res, _ := http.DefaultClient.Do(req)
 	// defer res.Body.Close()
 	// body, _ := ioutil.ReadAll(res.Body)
 	// fmt.Println(string(body))
+	fetchDataChannel := make(chan string)
+	go fetchDataFunc(fetchDataChannel)
+	select {
+	case <-fetchDataChannel:
+		fmt.Println("Fetch new data")
+	}
 
 }
