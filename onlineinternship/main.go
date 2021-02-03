@@ -116,7 +116,7 @@ func fetchDataFunc(ch chan string) {
 	p := fetch("http://api.tianapi.com/topnews/index?key=5b3105d3a9e6a64376361e84e0b6660d")
 	printPage(p)
 	dataList := fetchData(p)
-	checkDataIndex("news")
+	//checkDataIndex("news")
 	dataInsersion(dataList)
 
 	time.Sleep(3600 * time.Second)
@@ -131,44 +131,44 @@ func fetchDataFunc(ch chan string) {
 // 	Body      string `json:"body"`
 // 	//Types     []string `json:"types"`
 // }
+// 改成数据样例
+// const mappingNews = `{
+//     "mappings":{
+//         "news":{
+//             "timestamp":                 { "type": "string" },
+//             "source":         { "type": "string" },
+//             "title":            { "type": "string" },
+//             "body":            { "type": "string" },
+//             }
+//         }
+// 	}`
 
-const mappingNews = `{
-    "mappings":{
-        "news":{
-            "timestamp":                 { "type": "string" },
-            "source":         { "type": "string" },
-            "title":            { "type": "string" },
-            "body":            { "type": "string" },
-            }
-        }
-	}`
+// func checkDataIndex(index string) {
+// 	ctx := context.Background()
+// 	esclient, err := GetESClient()
+// 	if err != nil {
+// 		fmt.Println("Error initializing : ", err)
+// 		panic("Client fail ")
+// 	}
 
-func checkDataIndex(index string) {
-	ctx := context.Background()
-	esclient, err := GetESClient()
-	if err != nil {
-		fmt.Println("Error initializing : ", err)
-		panic("Client fail ")
-	}
+// 	exists, err := esclient.IndexExists(index).Do(ctx)
+// 	if err != nil {
+// 		// Handle error
+// 		panic(err)
+// 	}
 
-	exists, err := esclient.IndexExists(index).Do(ctx)
-	if err != nil {
-		// Handle error
-		panic(err)
-	}
-
-	if !exists {
-		// Create a new index.
-		createIndex, err := esclient.CreateIndex(index).BodyString(mappingNews).Do(ctx)
-		if err != nil {
-			// Handle error
-			panic(err)
-		}
-		if !createIndex.Acknowledged {
-			// Not acknowledged
-		}
-	}
-}
+// 	// if !exists {
+// 	// 	// Create a new index.
+// 	// 	createIndex, err := esclient.CreateIndex(index).BodyString(mappingNews).Do(ctx)
+// 	// 	if err != nil {
+// 	// 		// Handle error
+// 	// 		panic(err)
+// 	// 	}
+// 	// 	if !createIndex.Acknowledged {
+// 	// 		// Not acknowledged
+// 	// 	}
+// 	// }
+// }
 
 func dataInsersion(dataList []Data) {
 	ctx := context.Background()
@@ -182,7 +182,8 @@ func dataInsersion(dataList []Data) {
 		dataJSON, err := json.Marshal(dataList[i])
 		js := string(dataJSON)
 		ind, err := esclient.Index().
-			Index("News").
+			Index("news").
+			Type("_doc").
 			BodyJson(js).
 			Do(ctx)
 
@@ -199,8 +200,11 @@ func dataQuerying(id string) {
 	ctx := context.Background()
 	esclient, err := GetESClient()
 	// 根据id查询文档
+
+	// 有Type要注意
 	get1, err := esclient.Get().
-		Index("News").
+		Index("news").
+		Type("_doc").
 		Id(id).
 		Do(ctx)
 	if err != nil {
@@ -224,7 +228,8 @@ func dataDelete(id string) {
 	ctx := context.Background()
 	esclient, err := GetESClient()
 	_, err = esclient.Delete().
-		Index("News").
+		Index("news").
+		Type("_doc").
 		Id(id).
 		Do(ctx)
 	if err != nil {
@@ -279,6 +284,13 @@ func kafkaProduce(ctx context.Context) {
 	}
 }
 
+// Kibana
+// 消费后去重,关键词/敏感词过滤
+//多模式匹配 ac自动机O(1)
+// 文章自动分类
+// Redis + md5
+// DDIA
+// csapp
 func kafkaConsume(ctx context.Context) {
 	// create a new logger that outputs to stdout
 	// and has the `kafka reader` prefix
@@ -319,6 +331,8 @@ func main() {
 	// defer res.Body.Close()
 	// body, _ := ioutil.ReadAll(res.Body)
 	// fmt.Println(string(body))
+
+	//
 	fetchDataChannel := make(chan string)
 	go fetchDataFunc(fetchDataChannel)
 	select {
