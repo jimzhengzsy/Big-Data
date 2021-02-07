@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/segmentio/kafka-go"
@@ -89,5 +90,9 @@ func kafkaConsume(ctx context.Context) {
 		}
 		// after receiving the message, log its value
 		fmt.Println("received: ", string(msg.Value))
+		// Use jieba to divide a string into tokens
+		message := string(msg.Value)
+		words := cutString(message)
+		fmt.Println("Tokenized News:", strings.Join(words, "/"))
 	}
 }
