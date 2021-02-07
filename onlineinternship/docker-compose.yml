@@ -20,7 +20,7 @@ services:
       - "6379"
     restart: always
   es01:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.1
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.4.2
     container_name: es01
     environment:
       - node.name=es01
@@ -41,7 +41,7 @@ services:
       - elastic
 
   es02:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.1
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.4.2
     container_name: es02
     environment:
       - node.name=es02
@@ -62,7 +62,7 @@ services:
       - elastic
 
   es03:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.1
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.4.2
     container_name: es03
     environment:
       - node.name=es03
@@ -83,7 +83,7 @@ services:
       - elastic
 
   kib01:
-    image: docker.elastic.co/kibana/kibana:7.10.1
+    image: docker.elastic.co/kibana/kibana:7.4.2
     container_name: kib01
     ports:
       - 5601:5601
