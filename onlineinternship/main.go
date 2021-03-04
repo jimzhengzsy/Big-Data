@@ -115,6 +115,15 @@ func fetchDataFunc(ch chan string) {
 // DDIA
 // csapp
 
+// 在Redis 上实现simhash （实现可以写到简历里）
+// Simhash - 64 位
+// 计算差四位及四位以内
+// 抽屉原理
+
+// 用GO写，trie树双数组
+
+// 多思考怎么才是客观实现
+
 // Api Key: 5b3105d3a9e6a64376361e84e0b6660d
 //url := "http://api.tianapi.com/generalnews/index?key=5b3105d3a9e6a64376361e84e0b6660d"
 // url := "http://api.tianapi.com/topnews/index?key=5b3105d3a9e6a64376361e84e0b6660d"

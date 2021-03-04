@@ -90,9 +90,24 @@ func kafkaConsume(ctx context.Context) {
 		}
 		// after receiving the message, log its value
 		fmt.Println("received: ", string(msg.Value))
+
+		// NLP 分类生成，情感分析
+		// Web后端
+		// 自己设计的能力
+		// RESTful API -》惯例来设计API接口
+
+		// unmarshal 回 struct、
+		news := []Data{}
+		newsLength := len(news)
+		json.Unmarshal(msg.Value, &news)
+		// 做去重
+		for i := 0; i < newsLength; i++ {
+			kewWords := getKeyWords(news[i].Body)
+			fmt.Println("Tokenized News Key Words:", strings.Join(kewWords, "/"))
+		}
 		// Use jieba to divide a string into tokens
-		message := string(msg.Value)
-		words := cutString(message)
-		fmt.Println("Tokenized News:", strings.Join(words, "/"))
+		// message := string(msg.Value)
+		// words := getKeyWords(message)
+
 	}
 }
