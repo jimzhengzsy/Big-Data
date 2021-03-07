@@ -19,3 +19,10 @@ func getKeyWords(s string) []string {
 	words = x.Extract(s, 15)
 	return words
 }
+
+func getWeights(s string) []gojieba.WordWeight {
+	x := gojieba.NewJieba()
+	defer x.Free()
+	words := x.ExtractWithWeight(s, 15)
+	return words
+}

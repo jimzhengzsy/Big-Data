@@ -129,23 +129,24 @@ func fetchDataFunc(ch chan string) {
 // url := "http://api.tianapi.com/topnews/index?key=5b3105d3a9e6a64376361e84e0b6660d"
 
 //fmt.Println(fetch("http://api.tianapi.com/topnews/index?key=5b3105d3a9e6a64376361e84e0b6660d"))
-func main() {
 
-	//p := fetch("http://api.tianapi.com/topnews/index?key=5b3105d3a9e6a64376361e84e0b6660d")
-	//printPage(p)
-	// url := "http://api.tianapi.com/topnews/index?key=5b3105d3a9e6a64376361e84e0b6660d"
-	// req, _ := http.NewRequest("GET", url, nil)
-	// res, _ := http.DefaultClient.Do(req)
-	// defer res.Body.Close()
-	// body, _ := ioutil.ReadAll(res.Body)
-	// fmt.Println(string(body))
+// func main() {
 
-	//
-	fetchDataChannel := make(chan string)
-	go fetchDataFunc(fetchDataChannel)
-	select {
-	case <-fetchDataChannel:
-		fmt.Println("Fetch new data")
-	}
+// 	//p := fetch("http://api.tianapi.com/topnews/index?key=5b3105d3a9e6a64376361e84e0b6660d")
+// 	//printPage(p)
+// 	// url := "http://api.tianapi.com/topnews/index?key=5b3105d3a9e6a64376361e84e0b6660d"
+// 	// req, _ := http.NewRequest("GET", url, nil)
+// 	// res, _ := http.DefaultClient.Do(req)
+// 	// defer res.Body.Close()
+// 	// body, _ := ioutil.ReadAll(res.Body)
+// 	// fmt.Println(string(body))
 
-}
+// 	//
+// 	fetchDataChannel := make(chan string)
+// 	go fetchDataFunc(fetchDataChannel)
+// 	select {
+// 	case <-fetchDataChannel:
+// 		fmt.Println("Fetch new data")
+// 	}
+
+// }
